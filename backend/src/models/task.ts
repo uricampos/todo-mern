@@ -4,6 +4,7 @@ const taskSchema = new Schema(
     {
         title: { type: String, required: true },
         text: { type: String },
+        completed: {type: Boolean, default: false},
     },
     { timestamps: true }
 );
