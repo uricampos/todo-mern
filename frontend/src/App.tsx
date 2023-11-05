@@ -1,25 +1,29 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import { Button } from 'react-bootstrap';
+import { Task } from './models/task';
 
 function App() {
+    const [tasks, setTasks] = useState<Task[]>([]);
 
-  const [clickCount, setClickCount] = useState(0);
+    useEffect(() => {
+        async function loadTasks() {
+            try {
+                const response = await fetch('/api/tasks', {
+                    method: 'GET',
+                });
+                const tasks = await response.json();
+                setTasks(tasks);
+            } catch (error) {
+                console.error(error);
+                alert(error);
+            }
+        }
+        loadTasks();
+    }, []);
 
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <Button onClick={() => setClickCount(clickCount + 1)}>
-          Clicked {clickCount} times
-        </Button>
-      </header>
-    </div>
-  );
+    return <div className="App">{JSON.stringify(tasks)}</div>;
 }
 
 export default App;
