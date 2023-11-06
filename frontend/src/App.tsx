@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import logo from './logo.svg';
-import './App.css';
-import { Button } from 'react-bootstrap';
-import { Task } from './models/task';
+import { Button, Col, Container, Row } from 'react-bootstrap';
+import { Task as TaskModel } from './models/task';
+import Task from './components/Task';
+import styles from './styles/TaskPage.module.css';
 
 function App() {
-    const [tasks, setTasks] = useState<Task[]>([]);
+    const [tasks, setTasks] = useState<TaskModel[]>([]);
 
     useEffect(() => {
         async function loadTasks() {
@@ -23,7 +23,17 @@ function App() {
         loadTasks();
     }, []);
 
-    return <div className="App">{JSON.stringify(tasks)}</div>;
+    return (
+        <Container>
+            <Row xs={1} md={2} xl={3} className="g-4">
+                {tasks.map((task) => (
+                    <Col key={task._id}>
+                        <Task task={task} className={styles.task} />
+                    </Col>
+                ))}
+            </Row>
+        </Container>
+    );
 }
 
 export default App;
