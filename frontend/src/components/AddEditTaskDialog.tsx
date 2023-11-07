@@ -4,21 +4,36 @@ import { useForm } from 'react-hook-form';
 import { TaskInput } from '../network/tasks_api';
 import * as TasksApi from '../network/tasks_api';
 
-interface AddTaskDialogProps {
-    onDismiss: () => void;
-    onTaskSaved: (task: Task) => void;
+interface AddEditTaskDialogProps {
+    taskToEdit?: Task,
+    onDismiss: () => void,
+    onTaskSaved: (task: Task) => void,
 }
 
-const AddTaskDialog = ({ onDismiss, onTaskSaved }: AddTaskDialogProps) => {
+const AddEditTaskDialog = ({
+    taskToEdit,
+    onDismiss,
+    onTaskSaved,
+}: AddEditTaskDialogProps) => {
     const {
         register,
         handleSubmit,
         formState: { errors, isSubmitting },
-    } = useForm<TaskInput>();
+    } = useForm<TaskInput>({
+        defaultValues: {
+            title: taskToEdit?.title || '',
+            text: taskToEdit?.text || '',
+        },
+    });
 
     async function onSubmit(input: TaskInput) {
         try {
-            const taskResponse = await TasksApi.createTask(input);
+            let taskResponse: Task;
+            if (taskToEdit) {
+                taskResponse = await TasksApi.updateTask(taskToEdit._id, input);
+            } else {
+                taskResponse = await TasksApi.createTask(input);
+            }
             onTaskSaved(taskResponse);
         } catch (error) {
             console.error(error);
@@ -29,11 +44,11 @@ const AddTaskDialog = ({ onDismiss, onTaskSaved }: AddTaskDialogProps) => {
     return (
         <Modal show onHide={onDismiss}>
             <Modal.Header closeButton>
-                <Modal.Title>Add Task</Modal.Title>
+                <Modal.Title>{taskToEdit ? "Edit task" : "Add task"}</Modal.Title>
             </Modal.Header>
 
             <Modal.Body>
-                <Form id="addTaskForm" onSubmit={handleSubmit(onSubmit)}>
+                <Form id="addEditTaskForm" onSubmit={handleSubmit(onSubmit)}>
                     <Form.Group className="mb-3">
                         <Form.Label>Title</Form.Label>
                         <Form.Control
@@ -62,7 +77,7 @@ const AddTaskDialog = ({ onDismiss, onTaskSaved }: AddTaskDialogProps) => {
             <Modal.Footer>
                 <Button
                     type="submit"
-                    form="addTaskForm"
+                    form="addEditTaskForm"
                     disabled={isSubmitting}
                 >
                     Save
@@ -72,4 +87,4 @@ const AddTaskDialog = ({ onDismiss, onTaskSaved }: AddTaskDialogProps) => {
     );
 };
 
-export default AddTaskDialog;
+export default AddEditTaskDialog;

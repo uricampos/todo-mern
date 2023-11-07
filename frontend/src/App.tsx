@@ -5,12 +5,15 @@ import Task from './components/Task';
 import styles from './styles/TaskPage.module.css';
 import stylesUtils from './styles/utils.module.css';
 import * as TasksApi from './network/tasks_api';
-import AddTaskDialog from './components/AddTaskDialog';
+import AddTaskDialog from './components/AddEditTaskDialog';
+import { FaPlus } from 'react-icons/fa';
+import AddEditTaskDialog from './components/AddEditTaskDialog';
 
 function App() {
     const [tasks, setTasks] = useState<TaskModel[]>([]);
 
     const [showAddTaskDialog, setShowAddTaskDialog] = useState(false);
+    const [taskToEdit, setTaskToEdit] = useState<TaskModel | null>();
 
     useEffect(() => {
         async function loadTasks() {
@@ -25,15 +28,36 @@ function App() {
         loadTasks();
     }, []);
 
+    async function deleteTask(task: TaskModel) {
+        try {
+            await TasksApi.deleteTask(task._id);
+            setTasks(
+                tasks.filter((existingTask) => existingTask._id !== task._id)
+            );
+        } catch (error) {
+            console.error(error);
+            alert(error);
+        }
+    }
+
     return (
         <Container>
-            <Button className={`mb-4 ${stylesUtils.blockCenter}`} onClick={() => setShowAddTaskDialog(true)}>
+            <Button
+                className={`mb-4 ${stylesUtils.blockCenter} ${stylesUtils.flexCenter}`}
+                onClick={() => setShowAddTaskDialog(true)}
+            >
+                <FaPlus />
                 Add new task
             </Button>
             <Row xs={1} md={2} xl={3} className="g-4">
                 {tasks.map((task) => (
                     <Col key={task._id}>
-                        <Task task={task} className={styles.task} />
+                        <Task
+                            task={task}
+                            className={styles.task}
+                            onTaskClicked={setTaskToEdit}
+                            onDeleteTaskClicked={deleteTask}
+                        />
                     </Col>
                 ))}
             </Row>
@@ -43,6 +67,22 @@ function App() {
                     onTaskSaved={(newTask) => {
                         setTasks([...tasks, newTask]);
                         setShowAddTaskDialog(false);
+                    }}
+                />
+            )}
+            {taskToEdit && (
+                <AddEditTaskDialog
+                    taskToEdit={taskToEdit}
+                    onDismiss={() => setTaskToEdit(null)}
+                    onTaskSaved={(updatedTask) => {
+                        setTasks(
+                            tasks.map((existingTask) =>
+                                existingTask._id === updatedTask._id
+                                    ? updatedTask
+                                    : existingTask
+                            )
+                        );
+                        setTaskToEdit(null);
                     }}
                 />
             )}
