@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Col, Container, Row } from 'react-bootstrap';
+import { Button, Col, Container, Row, Spinner } from 'react-bootstrap';
 import { Task as TaskModel } from './models/task';
 import Task from './components/Task';
 import styles from './styles/TaskPage.module.css';
@@ -11,6 +11,8 @@ import AddEditTaskDialog from './components/AddEditTaskDialog';
 
 function App() {
     const [tasks, setTasks] = useState<TaskModel[]>([]);
+    const [tasksLoading, setTasksLoading] = useState(true);
+    const [showTasksLoadingError, setShowTasksLoadingError] = useState(false);
 
     const [showAddTaskDialog, setShowAddTaskDialog] = useState(false);
     const [taskToEdit, setTaskToEdit] = useState<TaskModel | null>();
@@ -18,11 +20,15 @@ function App() {
     useEffect(() => {
         async function loadTasks() {
             try {
+                setShowTasksLoadingError(false);
+                setTasksLoading(true);
                 const tasks = await TasksApi.fetchTasks();
                 setTasks(tasks);
             } catch (error) {
                 console.error(error);
-                alert(error);
+                setShowTasksLoadingError(true);
+            } finally {
+                setTasksLoading(false);
             }
         }
         loadTasks();
@@ -40,8 +46,23 @@ function App() {
         }
     }
 
+    const tasksGrid = (
+        <Row xs={1} md={2} xl={3} className={`g-4 ${styles.taskGrid}`}>
+            {tasks.map((task) => (
+                <Col key={task._id}>
+                    <Task
+                        task={task}
+                        className={styles.task}
+                        onTaskClicked={setTaskToEdit}
+                        onDeleteTaskClicked={deleteTask}
+                    />
+                </Col>
+            ))}
+        </Row>
+    );
+
     return (
-        <Container>
+        <Container className={styles.tasksPage}>
             <Button
                 className={`mb-4 ${stylesUtils.blockCenter} ${stylesUtils.flexCenter}`}
                 onClick={() => setShowAddTaskDialog(true)}
@@ -49,18 +70,19 @@ function App() {
                 <FaPlus />
                 Add new task
             </Button>
-            <Row xs={1} md={2} xl={3} className="g-4">
-                {tasks.map((task) => (
-                    <Col key={task._id}>
-                        <Task
-                            task={task}
-                            className={styles.task}
-                            onTaskClicked={setTaskToEdit}
-                            onDeleteTaskClicked={deleteTask}
-                        />
-                    </Col>
-                ))}
-            </Row>
+            {tasksLoading && <Spinner animation="border" variant="primary" />}
+            {showTasksLoadingError && (
+                <p className='text-light'>Something went wrong. Please refresh the page.</p>
+            )}
+            {!tasksLoading && !showTasksLoadingError && (
+                <>
+                    {tasks.length > 0 ? (
+                        tasksGrid
+                    ) : (
+                        <p className='text-light'>You don't have any tasks yet.</p>
+                    )}
+                </>
+            )}
             {showAddTaskDialog && (
                 <AddTaskDialog
                     onDismiss={() => setShowAddTaskDialog(false)}
